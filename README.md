@@ -1,77 +1,42 @@
-# foss-qdp-project
+API 网关项目
+=======
 
-## 权限模块
+本项目是采用了Spring Boot及Spring Cloud Zuul技术。
 
-### 帐户与用户（一对一）
+## 1. 功能说明
 
-登录的帐户与用户，用户必须要有相关的登录帐号才能登录系统
+本项目实现了API网关的功能，包括：权限、后台，没有采用注册中心，只是一个简单的服务反向代理。
 
-Account       <-1----1->       User
+		架构说明：
+		
+		客户端  -->  API网关  -->  应用服务
+		
+## 2. 权限配置
 
-### 帐户与角色（一对多）
+### 2.1. Shiro配置
 
-登录的帐号与角色关联，一个登录帐号可以有多个角色，如系统管理员等
+Shiro配置文件：META-INF/spring-auth/spring-shiro.xml。
 
-Account       <-1--TYPE1=SYS_DEF,TYPE2=ACCOUNT     --*->       Role
+		Shiro配置filters说明：
+		accctl   : 用于页面登录认证，采用Cookie形式。
+		accip    : 用于服务访问认证，允许IP访问，配置文件：META-INF/config/access-ip.properties。
+		acczuul  : 用于ZUUL服务访问认证，认证方法，HttpHelper.validateIpMd5(ip, request.getHeader("zuul"))。
+		accauth  : 用于用户名密码认证，配置文件：META-INF/config/authorization.properties，auth.simpleauth.enable必须为true，如果为false需要使用到权限系统，或配置远程调用服务，详见：META-INF/spring-rpc-consumer/rpc-consumer-systemauth.xml。
+		traceid  : 用于添加TRACE ID，跟踪调用过程。
 
-### 组织与角色（一对多）
+### 2.2. 认证授权配置
 
-组织机构与角色关联，如部门经理，项目经理
+项目不带有认证授权系统，认证授权可以通过三种方式实现：
 
-Organization  <-1--TYPE1=SYS_DEF,TYPE2=ORGANIZATION--*->       Role
+1. 配置META-INF/config/authorization.properties，设置auth.simpleauth.enable=true。
+2. 当auth.simpleauth.enable=false，实现Spring Bean为defaultSystemApplication，接口为com.foreveross.common.application.SystemApplication，实现Spring Bean为defaultAuthorizationApplication，接口为com.foreveross.common.application.AuthorizationApplication，自行加载权限数据。
+3. 当auth.simpleauth.enable=false，开启HTTP-RPC调用，META-INF/spring-rpc-consumer/rpc-consumer-systemauth.xml，调用远程的权限实现。
 
-### 组织与菜单（一对多）
+## 3. 运行
 
-一个组织可以挂一个菜单，如公司机构可以挂管理公司的菜单，如项目组织可以挂项目管理菜单
+1. 项目编译：mvn clean package
+2. 项目运行：java -jar foss-qdp-api-gateway-project-1.0.0.war
+3. 个性配置：java -jar -Dspring.config.location=application.properties foss-qdp-api-gateway-project-1.0.0.war
 
-Organization  <-*----*->       Menu
-
-### 用户与组织（一对多）
-
-一个用户可以在多个组织下工作，如公司组织机构，项目组织等
-
-User          <-*----*->       Organization
-
-### 资源与角色（多对一）
-
-表示一个角色可以访问哪些资源
-
-Resource      <-*----1->       Role
-
-### 菜单与资源（一对一）
-
-菜单是一种特殊类型的资源
-
-Menu          <-1----1->       Resource
-
-### 查找一个帐号的所有角色
-
-1. 查找Account-Role
-
-2. 查找Account-User-Organization-Role
-
-
-## Mybatis 命名查询
-
-### 命名规则
-
-1. 查询单条结果
-
-get+对象名+[Map]+By+条件字段名， 如通过菜单id查询菜单【getMenuById】，如果返回集合为Map【getMenuMapById】，多条件如【getMenuByIdAndName】
-
-2. 查询多条结果
-
-find+对象名+[Map]+By+条件字段名， 如通过菜单name查询菜单【findMenuByName】，如果返回集合为Map【findMenuMapByName】，多条件如【findMenuByNameAndParent】
-
-3. 查询记录数
-
-count+对象名+By+条件字段名， 如通过菜单name查询菜单总数【countMenuByName】
-
-
-
-
-
-
-
-
+应用配置文件：config/application.properties。
 
