@@ -22,6 +22,7 @@ import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfigu
 import org.springframework.boot.web.filter.OrderedCharacterEncodingFilter;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
+import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -104,8 +105,10 @@ public class BootApplication extends WebMvcConfigurerAdapter {
 
 	public class PreRequestFilter extends ZuulFilter {
 
+		private String ipsMd5 = "";
+
 		public String filterType() {//"pre" for pre-routing filtering, "route" for routing to an origin, "post" for post-routing filters, "error" for error handling.
-			return "pre";
+			return FilterConstants.PRE_TYPE;
 		}
 
 		public int filterOrder() {
@@ -124,11 +127,18 @@ public class BootApplication extends WebMvcConfigurerAdapter {
 			if (token == null) {
 				token = request.getParameter("token");
 			}
-			ctx.addZuulRequestHeader("zuul", HttpHelper.ipsMd5());
+			ctx.addZuulRequestHeader("zuul", getZuulHeader());
 			ctx.addZuulRequestHeader("x-forwarded-for", HttpHelper.getRemoteIpAddr(request));
 			ctx.addZuulRequestHeader("proxy-enable", "1");
 			System.out.println(RequestContext.getCurrentContext().getRouteHost());
 			return null;
+		}
+
+		private String getZuulHeader() {
+			if (ipsMd5 == null || ipsMd5.length() < 1) {
+				ipsMd5 = HttpHelper.ipsMd5();
+			}
+			return ipsMd5;
 		}
 	}
 }
