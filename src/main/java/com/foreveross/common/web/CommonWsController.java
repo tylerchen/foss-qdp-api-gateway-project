@@ -16,7 +16,8 @@ import java.util.List;
 
 /**
  * CommonWsController
- * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a> 
+ *
+ * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
  * @since Aug 9, 2015
  * auto generate by qdp.
  */
@@ -24,7 +25,7 @@ import java.util.List;
 @RequestMapping("/ws")
 public class CommonWsController extends AbstractWsController {
 
-	boolean canAccessBean(Authorization authorization, String beanName, List<String> roles) {
-		return Authorization.Util.hasAuthorization(authorization, beanName, false, roles);
-	}
+    boolean canAccessBean(Authorization authorization, String beanName, List<String> roles) {
+        return Authorization.Util.hasAuthorization(authorization, beanName, false, roles);
+    }
 }

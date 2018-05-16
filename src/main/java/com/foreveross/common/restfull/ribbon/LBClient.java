@@ -30,143 +30,143 @@ import java.util.*;
 
 public final class LBClient extends AbstractLoadBalancerAwareClient<LBClient.RibbonRequest, LBClient.RibbonResponse> {
 
-	private final int connectTimeout;
-	private final int readTimeout;
-	private final IClientConfig clientConfig;
-	private final Set<Integer> retryableStatusCodes;
+    private final int connectTimeout;
+    private final int readTimeout;
+    private final IClientConfig clientConfig;
+    private final Set<Integer> retryableStatusCodes;
 
-	public static LBClient create(ILoadBalancer lb, IClientConfig clientConfig) {
-		return new LBClient(lb, clientConfig);
-	}
+    public static LBClient create(ILoadBalancer lb, IClientConfig clientConfig) {
+        return new LBClient(lb, clientConfig);
+    }
 
-	static Set<Integer> parseStatusCodes(String statusCodesString) {
-		if (statusCodesString == null || statusCodesString.isEmpty()) {
-			return Collections.emptySet();
-		}
-		Set<Integer> codes = new LinkedHashSet<Integer>();
-		for (String codeString : statusCodesString.split(",")) {
-			codes.add(Integer.parseInt(codeString));
-		}
-		return codes;
-	}
+    static Set<Integer> parseStatusCodes(String statusCodesString) {
+        if (statusCodesString == null || statusCodesString.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<Integer> codes = new LinkedHashSet<Integer>();
+        for (String codeString : statusCodesString.split(",")) {
+            codes.add(Integer.parseInt(codeString));
+        }
+        return codes;
+    }
 
-	LBClient(ILoadBalancer lb, IClientConfig clientConfig) {
-		super(lb, clientConfig);
-		this.clientConfig = clientConfig;
-		connectTimeout = clientConfig.get(CommonClientConfigKey.ConnectTimeout);
-		readTimeout = clientConfig.get(CommonClientConfigKey.ReadTimeout);
-		retryableStatusCodes = parseStatusCodes(clientConfig.get(LBClientFactory.RetryableStatusCodes));
-	}
+    LBClient(ILoadBalancer lb, IClientConfig clientConfig) {
+        super(lb, clientConfig);
+        this.clientConfig = clientConfig;
+        connectTimeout = clientConfig.get(CommonClientConfigKey.ConnectTimeout);
+        readTimeout = clientConfig.get(CommonClientConfigKey.ReadTimeout);
+        retryableStatusCodes = parseStatusCodes(clientConfig.get(LBClientFactory.RetryableStatusCodes));
+    }
 
-	@Override
-	public RibbonResponse execute(RibbonRequest request, IClientConfig configOverride)
-			throws IOException, ClientException {
-		Options options;
-		if (configOverride != null) {
-			options = new Options(configOverride.get(CommonClientConfigKey.ConnectTimeout, connectTimeout),
-					(configOverride.get(CommonClientConfigKey.ReadTimeout, readTimeout)));
-		} else {
-			options = new Options(connectTimeout, readTimeout);
-		}
-		Response response = request.client().execute(request.toRequest(), options);
-		if (retryableStatusCodes.contains(response.status())) {
-			response.close();
-			throw new ClientException(ClientException.ErrorType.SERVER_THROTTLED);
-		}
-		return new RibbonResponse(request.getUri(), response);
-	}
+    @Override
+    public RibbonResponse execute(RibbonRequest request, IClientConfig configOverride)
+            throws IOException, ClientException {
+        Options options;
+        if (configOverride != null) {
+            options = new Options(configOverride.get(CommonClientConfigKey.ConnectTimeout, connectTimeout),
+                    (configOverride.get(CommonClientConfigKey.ReadTimeout, readTimeout)));
+        } else {
+            options = new Options(connectTimeout, readTimeout);
+        }
+        Response response = request.client().execute(request.toRequest(), options);
+        if (retryableStatusCodes.contains(response.status())) {
+            response.close();
+            throw new ClientException(ClientException.ErrorType.SERVER_THROTTLED);
+        }
+        return new RibbonResponse(request.getUri(), response);
+    }
 
-	@Override
-	public RequestSpecificRetryHandler getRequestSpecificRetryHandler(RibbonRequest request,
+    @Override
+    public RequestSpecificRetryHandler getRequestSpecificRetryHandler(RibbonRequest request,
                                                                       IClientConfig requestConfig) {
-		if (clientConfig.get(CommonClientConfigKey.OkToRetryOnAllOperations, false)) {
-			return new RequestSpecificRetryHandler(true, true, this.getRetryHandler(), requestConfig);
-		}
-		if (!request.toRequest().method().equals("GET")) {
-			return new RequestSpecificRetryHandler(true, false, this.getRetryHandler(), requestConfig);
-		} else {
-			return new RequestSpecificRetryHandler(true, true, this.getRetryHandler(), requestConfig);
-		}
-	}
+        if (clientConfig.get(CommonClientConfigKey.OkToRetryOnAllOperations, false)) {
+            return new RequestSpecificRetryHandler(true, true, this.getRetryHandler(), requestConfig);
+        }
+        if (!request.toRequest().method().equals("GET")) {
+            return new RequestSpecificRetryHandler(true, false, this.getRetryHandler(), requestConfig);
+        } else {
+            return new RequestSpecificRetryHandler(true, true, this.getRetryHandler(), requestConfig);
+        }
+    }
 
-	static class RibbonRequest extends ClientRequest implements Cloneable {
+    static class RibbonRequest extends ClientRequest implements Cloneable {
 
-		private final Request request;
-		private final RestClient client;
+        private final Request request;
+        private final RestClient client;
 
-		RibbonRequest(RestClient client, Request request, URI uri) {
-			this.client = client;
-			this.request = request;
-			setUri(uri);
-		}
+        RibbonRequest(RestClient client, Request request, URI uri) {
+            this.client = client;
+            this.request = request;
+            setUri(uri);
+        }
 
-		Request toRequest() {
-			// add header "Content-Length" according to the request body
-			final byte[] body = request.body();
-			final int bodyLength = body != null ? body.length : 0;
-			// create a new Map to avoid side effect, not to change the old headers
-			Map<String, Collection<String>> headers = new LinkedHashMap<String, Collection<String>>();
-			headers.putAll(request.headers());
-			headers.put("Content-Length", Arrays.asList(String.valueOf(bodyLength)));
-			return Request.create(request.method(), getUri().toASCIIString(), headers, body, request.charset(),
-					request.resultType());
-		}
+        Request toRequest() {
+            // add header "Content-Length" according to the request body
+            final byte[] body = request.body();
+            final int bodyLength = body != null ? body.length : 0;
+            // create a new Map to avoid side effect, not to change the old headers
+            Map<String, Collection<String>> headers = new LinkedHashMap<String, Collection<String>>();
+            headers.putAll(request.headers());
+            headers.put("Content-Length", Arrays.asList(String.valueOf(bodyLength)));
+            return Request.create(request.method(), getUri().toASCIIString(), headers, body, request.charset(),
+                    request.resultType());
+        }
 
-		RestClient client() {
-			return client;
-		}
+        RestClient client() {
+            return client;
+        }
 
-		public Object clone() {
-			return new RibbonRequest(client, request, getUri());
-		}
-	}
+        public Object clone() {
+            return new RibbonRequest(client, request, getUri());
+        }
+    }
 
-	static class RibbonResponse implements IResponse {
+    static class RibbonResponse implements IResponse {
 
-		private final URI uri;
-		private final Response response;
+        private final URI uri;
+        private final Response response;
 
-		RibbonResponse(URI uri, Response response) {
-			this.uri = uri;
-			this.response = response;
-		}
+        RibbonResponse(URI uri, Response response) {
+            this.uri = uri;
+            this.response = response;
+        }
 
-		@Override
-		public Object getPayload() throws ClientException {
-			return response.body();
-		}
+        @Override
+        public Object getPayload() throws ClientException {
+            return response.body();
+        }
 
-		@Override
-		public boolean hasPayload() {
-			return response.body() != null;
-		}
+        @Override
+        public boolean hasPayload() {
+            return response.body() != null;
+        }
 
-		@Override
-		public boolean isSuccess() {
-			return response.status() == 200;
-		}
+        @Override
+        public boolean isSuccess() {
+            return response.status() == 200;
+        }
 
-		@Override
-		public URI getRequestedURI() {
-			return uri;
-		}
+        @Override
+        public URI getRequestedURI() {
+            return uri;
+        }
 
-		@Override
-		public Map<String, Collection<String>> getHeaders() {
-			return response.headers();
-		}
+        @Override
+        public Map<String, Collection<String>> getHeaders() {
+            return response.headers();
+        }
 
-		Response toResponse() {
-			return response;
-		}
+        Response toResponse() {
+            return response;
+        }
 
-		@Override
-		public void close() throws IOException {
-			if (response != null && response.body() != null) {
-				response.body().close();
-			}
-		}
+        @Override
+        public void close() throws IOException {
+            if (response != null && response.body() != null) {
+                response.body().close();
+            }
+        }
 
-	}
+    }
 
 }

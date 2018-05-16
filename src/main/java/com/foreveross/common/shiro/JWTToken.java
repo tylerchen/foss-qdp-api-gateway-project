@@ -10,38 +10,38 @@ package com.foreveross.common.shiro;
 import org.apache.shiro.authc.AuthenticationToken;
 
 /**
- * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a> 
+ * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
  * @since Mar 21, 2018
  */
 @SuppressWarnings("serial")
 public class JWTToken implements AuthenticationToken {
 
-	// 密钥
-	private Object principal;
+    // 密钥
+    private Object principal;
 
-	private Object credentials;
+    private Object credentials;
 
-	public JWTToken() {
-	}
+    public JWTToken() {
+    }
 
-	public JWTToken(String principal) {
-		this.principal = principal;
-	}
+    public JWTToken(String principal) {
+        this.principal = principal;
+    }
 
-	public Object getPrincipal() {
-		return principal;
-	}
+    public Object getPrincipal() {
+        return principal;
+    }
 
-	public void setPrincipal(Object principal) {
-		this.principal = principal;
-	}
+    public void setPrincipal(Object principal) {
+        this.principal = principal;
+    }
 
-	public Object getCredentials() {
-		return credentials;
-	}
+    public Object getCredentials() {
+        return credentials;
+    }
 
-	public void setCredentials(Object credentials) {
-		this.credentials = credentials;
-	}
+    public void setCredentials(Object credentials) {
+        this.credentials = credentials;
+    }
 
 }

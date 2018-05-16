@@ -28,73 +28,74 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a> 
+ * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
  * @since Mar 21, 2018
  */
 public class JWTRealm extends AuthorizingRealm {
 
-	@Inject
-	@Named("systemApplication")
+    @Inject
+    @Named("systemApplication")
     SystemApplication systemApplication;
-	@Inject
+    @Inject
     AuthorizationApplication authorizationApplication;
 
-	protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-		Iterator<?> iterator = principals.fromRealm(getName()).iterator();
-		if (!iterator.hasNext()) {
-			return null;
-		}
-		Object principal = iterator.next();
-		String loginId = JWTTokenHelper.decodeToken(principal.toString());
-		Set<String> roleNames = authorizationApplication.findAuthRoleByLoginId(loginId);
-		Set<String> permissions = authorizationApplication.findAuthResourceByLoginId(loginId);
-		Set<Permission> objectPermissions = new HashSet<Permission>();
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+        Iterator<?> iterator = principals.fromRealm(getName()).iterator();
+        if (!iterator.hasNext()) {
+            return null;
+        }
+        Object principal = iterator.next();
+        String loginId = JWTTokenHelper.decodeToken(principal.toString());
+        Set<String> roleNames = authorizationApplication.findAuthRoleByLoginId(loginId);
+        Set<String> permissions = authorizationApplication.findAuthResourceByLoginId(loginId);
+        Set<Permission> objectPermissions = new HashSet<Permission>();
 
-		SimpleAuthorizationInfo info = new SimpleAuthorizationInfo(roleNames);
-		info.setStringPermissions(permissions);
-		info.setObjectPermissions(objectPermissions);
-		return info;
-	}
+        SimpleAuthorizationInfo info = new SimpleAuthorizationInfo(roleNames);
+        info.setStringPermissions(permissions);
+        info.setObjectPermissions(objectPermissions);
+        return info;
+    }
 
-	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
-		JWTToken jwtToken = (JWTToken) token;
-		String loginId = JWTTokenHelper.decodeToken((String) jwtToken.getPrincipal());
-		ShiroUser user = systemApplication.getShiroUserByLoginId(loginId);
-		jwtToken.setCredentials(user.getLoginPasswd());
-		AuthenticationInfo authcInfo = new SimpleAuthenticationInfo(user.getLoginId(), jwtToken.getCredentials(),
-				getName());
-		return authcInfo;
-	}
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
+        JWTToken jwtToken = (JWTToken) token;
+        String loginId = JWTTokenHelper.decodeToken((String) jwtToken.getPrincipal());
+        ShiroUser user = systemApplication.getShiroUserByLoginId(loginId);
+        jwtToken.setCredentials(user.getLoginPasswd());
+        AuthenticationInfo authcInfo = new SimpleAuthenticationInfo(user.getLoginId(), jwtToken.getCredentials(),
+                getName());
+        return authcInfo;
+    }
 
-	/** 
-	 * 更新用户授权信息缓存. 
-	 */
-	public void clearCachedAuthorizationInfo(String principal) {
-		SimplePrincipalCollection principals = new SimplePrincipalCollection(principal, getName());
-		clearCachedAuthorizationInfo(principals);
-	}
+    /**
+     * 更新用户授权信息缓存.
+     */
+    public void clearCachedAuthorizationInfo(String principal) {
+        SimplePrincipalCollection principals = new SimplePrincipalCollection(principal, getName());
+        clearCachedAuthorizationInfo(principals);
+    }
 
-	/** 
-	 * 清除所有用户授权信息缓存. 
-	 */
-	public void clearAllCachedAuthorizationInfo() {
-		Cache<Object, AuthorizationInfo> cache = getAuthorizationCache();
-		if (cache != null) {
-			for (Object key : cache.keys()) {
-				cache.remove(key);
-			}
-		}
-	}
+    /**
+     * 清除所有用户授权信息缓存.
+     */
+    public void clearAllCachedAuthorizationInfo() {
+        Cache<Object, AuthorizationInfo> cache = getAuthorizationCache();
+        if (cache != null) {
+            for (Object key : cache.keys()) {
+                cache.remove(key);
+            }
+        }
+    }
 
-	/**
-	 * 仅支持 JWTToken 验证。
-	 * (non-Javadoc)
-	 * @see org.apache.shiro.realm.AuthenticatingRealm#supports(AuthenticationToken)
-	 * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a> 
-	 * @since Mar 21, 2018
-	 */
-	public boolean supports(AuthenticationToken token) {
-		return token instanceof JWTToken;
-	}
+    /**
+     * 仅支持 JWTToken 验证。
+     * (non-Javadoc)
+     *
+     * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
+     * @see org.apache.shiro.realm.AuthenticatingRealm#supports(AuthenticationToken)
+     * @since Mar 21, 2018
+     */
+    public boolean supports(AuthenticationToken token) {
+        return token instanceof JWTToken;
+    }
 
 }
