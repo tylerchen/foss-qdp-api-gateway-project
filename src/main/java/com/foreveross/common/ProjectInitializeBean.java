@@ -8,21 +8,26 @@
  ******************************************************************************/
 package com.foreveross.common;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import javax.inject.Named;
-
+import org.apache.commons.lang3.StringUtils;
 import org.iff.infra.util.BeanHelper;
 import org.iff.infra.util.CacheHelper;
+import org.iff.infra.util.EhcacheHelper;
 import org.iff.infra.util.I18nHelper;
 import org.iff.infra.util.PropertiesHelper;
-import org.iff.infra.util.EhcacheHelper;
 import org.iff.infra.util.spring.SpringContextHelper;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
@@ -30,22 +35,33 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 
 import com.foreveross.common.application.SystemApplication;
+import com.foreveross.common.restfull.RestClientUtil;
+import com.foreveross.common.restfull.UriManager;
 import com.foreveross.extension.monitor.application.MonitorApplication;
 
 import net.sf.ehcache.CacheManager;
 
 /**
  * 项目初始化需要做的内容。
- * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a> 
+ * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
  * @since Aug 9, 2015
  * auto generate by qdp.
  */
-public class ProjectInitializeBean implements InitializingBean, ApplicationListener<ContextRefreshedEvent> {
+public class ProjectInitializeBean
+		implements InitializingBean, ApplicationListener<ContextRefreshedEvent>, BeanFactoryPostProcessor {
 
-	private static Boolean hasInit = false;
+	private static boolean hasInit = false;
+	private static boolean hasRefresh = false;
 
-	public synchronized void afterPropertiesSet() throws Exception {
-		if (!hasInit) {
+	/**
+	 * 【Bean未开始加载】在Bean开始初始化前就加载一些配置或进行预处理。
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.config.BeanFactoryPostProcessor#postProcessBeanFactory(org.springframework.beans.factory.config.ConfigurableListableBeanFactory)
+	 * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
+	 * @since Mar 20, 2018
+	 */
+	public synchronized void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+		if (!hasInit && (hasInit = true)) {
 			{//使用POVOCopy，生成Groovy代码。
 				BeanHelper.setUsePOVOCopyHelper(true);
 			}
@@ -57,8 +73,13 @@ public class ProjectInitializeBean implements InitializingBean, ApplicationListe
 						.loadPropertyFiles(new String[] { "classpath://META-INF/config" });
 				ConstantBean.setProperties(map);
 			}
+			{//加载 restful 的配置
+				Map<String, String> map = PropertiesHelper
+						.loadPropertyFiles(new String[] { "classpath://META-INF/restful" });
+				UriManager.parseProperties(map);
+			}
 			{//加载系统属性
-				Map<String, String> map = new HashMap<String, String>();
+				Map<String, String> map = new LinkedHashMap<String, String>();
 				Properties properties = System.getProperties();
 				for (Entry<Object, Object> entry : properties.entrySet()) {
 					if (entry.getKey() instanceof String && entry.getValue() instanceof String) {
@@ -67,48 +88,92 @@ public class ProjectInitializeBean implements InitializingBean, ApplicationListe
 				}
 				ConstantBean.setProperties(map);
 			}
-			hasInit = true;
 		}
 	}
 
+	/**
+	 * 【Bean开始加载但未完成】在Bean开始初始化就进行预处理。
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+	 * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
+	 * @since Mar 20, 2018
+	 */
+	public void afterPropertiesSet() throws Exception {
+
+	}
+
+	/**
+	 * 【Bean已经初始化完成】所有Bean加载完成后，会调用这个方法，也就是说这个方法执行时所有的Bean已经初始化完成了。
+	 * (non-Javadoc)
+	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
+	 * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
+	 * @since Mar 20, 2018
+	 */
+	@SuppressWarnings("resource")
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		{//加载数据库I18N
-			((SystemApplication) SpringContextHelper.getBean("systemApplication")).initI18n();
-		}
-		{//设置默认的缓存
-			EhcacheHelper.init((CacheManager) SpringContextHelper.getBean("cacheManager"));
-			CacheHelper.init(new CacheHelper.EhCacheCacheable());
-			//CacheHelper.init(new CacheHelper.DisabledCacheable());
-		}
-		try {//这个是调试代码
-			MonitorApplication monitorApplication = SpringContextHelper.getBean(MonitorApplication.class);
-			ApplicationContext applicationContext = event.getApplicationContext();
-			Map<String, DefaultListableBeanFactory> beanNames = new HashMap<String, DefaultListableBeanFactory>();
-			ConfigurableApplicationContext xml = (ConfigurableApplicationContext) applicationContext;
-			DefaultListableBeanFactory bf = (DefaultListableBeanFactory) xml.getBeanFactory();
-			while (bf != null) {
-				String[] names = bf.getBeanDefinitionNames();
-				for (String name : names) {
-					if (name.endsWith("Application")) {
-						beanNames.put(name, bf);
+		if (!hasRefresh && (hasRefresh = true)) {
+			{//加载数据库I18N
+				((SystemApplication) SpringContextHelper.getBean("systemApplication")).initI18n();
+			}
+			{//设置默认的缓存
+				EhcacheHelper.init((CacheManager) SpringContextHelper.getBean("cacheManager"));
+				CacheHelper.init(new CacheHelper.EhCacheCacheable());
+				//CacheHelper.init(new CacheHelper.DisabledCacheable());
+			}
+			{//加载 restful client 的配置
+				Map<String, String> map = PropertiesHelper
+						.loadPropertyFiles(new String[] { "classpath://META-INF/restclient" });
+				RestClientUtil.parseProperties(map);
+			}
+			{//初始化Shiro配置
+				//((ShiroChainDefinitionManager) SpringContextHelper.getBean("shiroChainDefinitionManager"))
+				//		.reCreateFilterChains();
+			}
+			try {
+				MonitorApplication monitorApplication = SpringContextHelper.getBean(MonitorApplication.class);
+				ApplicationContext applicationContext = event.getApplicationContext();
+				Map<String, DefaultListableBeanFactory> beanNames = new HashMap<String, DefaultListableBeanFactory>();
+				ConfigurableApplicationContext xml = (ConfigurableApplicationContext) applicationContext;
+				DefaultListableBeanFactory bf = (DefaultListableBeanFactory) xml.getBeanFactory();
+				while (bf != null) {
+					String[] names = bf.getBeanDefinitionNames();
+					for (String name : names) {
+						if (name.endsWith("Application")) {
+							beanNames.put(name, bf);
+						}
+					}
+					bf = (DefaultListableBeanFactory) bf.getParentBeanFactory();
+				}
+				List<Class<?>> initSpringService = new ArrayList<Class<?>>();
+				for (Entry<String, DefaultListableBeanFactory> entry : beanNames.entrySet()) {
+					try {
+						String beanName = entry.getKey();
+						Class<?> loadClass = entry.getValue().getType(beanName);
+						if (loadClass != null) {
+							String className = null;
+							className = (String) entry.getValue().getBeanDefinition(beanName).getPropertyValues()
+									.get("interfaceName");
+							if (StringUtils.isBlank(className)) {
+								className = entry.getValue().getBeanDefinition(beanName).getBeanClassName();
+							}
+							loadClass = xml.getClassLoader().loadClass(className);
+						}
+						if (loadClass.isInterface()) {//如果只是代理类，一般就是接口
+							initSpringService.add(loadClass);
+						} else {//如果是实现类，一般要拿到其接口
+							Class<?>[] interfaces = loadClass.getInterfaces();
+							initSpringService.addAll(Arrays.asList(interfaces));
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 				}
-				bf = (DefaultListableBeanFactory) bf.getParentBeanFactory();
-			}
-			for (Entry<String, DefaultListableBeanFactory> entry : beanNames.entrySet()) {
-				try {
-					String className = entry.getValue().getBeanDefinition(entry.getKey()).getBeanClassName();
-					Class<?> loadClass = xml.getClassLoader().loadClass(className);
-					Class<?>[] interfaces = loadClass.getInterfaces();
-					Named named = loadClass.getAnnotation(Named.class);
-					System.out.println(Arrays.toString(interfaces));
-					monitorApplication.initSpringServiceMap(interfaces);
-				} catch (Exception e) {
-					e.printStackTrace();
+				if (initSpringService.size() > 0) {
+					monitorApplication.initSpringServiceMap(initSpringService.toArray(new Class<?>[0]));
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 }

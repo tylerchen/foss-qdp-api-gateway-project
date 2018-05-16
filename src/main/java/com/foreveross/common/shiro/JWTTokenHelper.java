@@ -7,34 +7,29 @@
  ******************************************************************************/
 package com.foreveross.common.shiro;
 
-import java.security.Key;
-import java.util.Date;
-
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
-
-import org.iff.infra.util.StringHelper;
-
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.iff.infra.util.StringHelper;
+
+import javax.crypto.spec.SecretKeySpec;
+import java.security.Key;
+import java.util.Date;
 
 /**
  * 用于JWT验证
  * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a> 
  * @since Aug 28, 2017
  */
-@Deprecated
-//未实现
-public class TokenHelper {
+public class JWTTokenHelper {
 
-	private static final String SECRET = "XX#$%()(#*!()!KL<><MQLMNQNQJQK qdp>?N<:{LWPW";
+	private static final String SECRET = "FOSS-JWT";
 
 	public static String encodeToken(String userPrincipal, long ttlMillis) {
 		SignatureAlgorithm sigAlg = SignatureAlgorithm.HS256;
 		long nowMillis = System.currentTimeMillis();
 		Date now = new Date(nowMillis);
-		byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(SECRET);
+		byte[] apiKeySecretBytes = SECRET.getBytes();
 		Key signingKey = new SecretKeySpec(apiKeySecretBytes, sigAlg.getJcaName());
 		JwtBuilder builder = Jwts.builder().setId(StringHelper.uuid()).setIssuedAt(now).setIssuer("tylerchen-qdp")
 				.setSubject(userPrincipal).signWith(sigAlg, signingKey);
@@ -50,9 +45,9 @@ public class TokenHelper {
 	public static String encodeToken(String userPrincipal) {
 		SignatureAlgorithm sigAlg = SignatureAlgorithm.HS256;
 		long nowMillis = System.currentTimeMillis();
-		long ttlMillis = 30 * 60 * 100;//过期时间30分钟
+		long ttlMillis = 5 * 60 * 1000;//过期时间5分钟
 		Date now = new Date(nowMillis);
-		byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(SECRET);
+		byte[] apiKeySecretBytes = SECRET.getBytes();
 		Key signingKey = new SecretKeySpec(apiKeySecretBytes, sigAlg.getJcaName());
 		JwtBuilder builder = Jwts.builder().setId(StringHelper.uuid()).setIssuedAt(now).setIssuer("tylerchen-qdp")
 				.setSubject(userPrincipal).signWith(sigAlg, signingKey);
@@ -66,9 +61,8 @@ public class TokenHelper {
 	}
 
 	public static String decodeToken(String token) {
-		String userPrincipal = Jwts.parser().setSigningKey(DatatypeConverter.parseBase64Binary(SECRET))
-				.parseClaimsJws(token).getBody().getSubject();
+		String userPrincipal = Jwts.parser().setSigningKey(SECRET.getBytes()).parseClaimsJws(token).getBody()
+				.getSubject();
 		return userPrincipal;
 	}
-
 }

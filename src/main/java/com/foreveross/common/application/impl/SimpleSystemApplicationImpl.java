@@ -26,6 +26,7 @@ import com.foreveross.common.shiro.ShiroUser;
  * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a> 
  * @since Aug 28, 2017
  */
+@SuppressWarnings("unchecked")
 @Named("simpleSystemApplication")
 public class SimpleSystemApplicationImpl implements SystemApplication {
 

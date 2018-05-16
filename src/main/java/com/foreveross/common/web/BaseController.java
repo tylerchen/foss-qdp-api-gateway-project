@@ -8,12 +8,8 @@
  ******************************************************************************/
 package com.foreveross.common.web;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletResponse;
-
+import com.foreveross.common.ResultBean;
+import com.foreveross.common.shiro.ShiroUser;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.iff.infra.util.I18nHelper;
@@ -22,8 +18,10 @@ import org.iff.infra.util.ThreadLocalHelper;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 
-import com.foreveross.common.ResultBean;
-import com.foreveross.common.shiro.ShiroUser;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Locale;
 
 /**
  * Controller的基础类，所有的Controller必须要继承这个。

@@ -7,14 +7,6 @@
  ******************************************************************************/
 package com.foreveross.common.shiro;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.session.Session;
@@ -22,8 +14,14 @@ import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.servlet.AdviceFilter;
 import org.iff.infra.util.FCS;
 import org.iff.infra.util.HttpHelper;
-import org.iff.infra.util.Logger;
 import org.iff.infra.util.StringHelper;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * 设置跟踪ID，通过这个ID可以跟踪一个请求。
@@ -31,6 +29,8 @@ import org.iff.infra.util.StringHelper;
  * @since Aug 11, 2016
  */
 public class ShiroTraceIdFilter extends AdviceFilter {
+
+	private static final org.iff.infra.util.Logger.Log Logger = org.iff.infra.util.Logger.get("FOSS-SHIRO");
 
 	protected boolean preHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws Exception {
 		HttpServletRequest request = (HttpServletRequest) servletRequest;
@@ -49,7 +49,7 @@ public class ShiroTraceIdFilter extends AdviceFilter {
 			ip = HttpHelper.getRemoteIpAddr(request);
 		}
 		{
-			traceId = StringUtils.defaultIfBlank(request.getHeader("TRACE_ID"), Logger.getTraceId());
+			traceId = StringUtils.defaultIfBlank(request.getHeader("TRACE_ID"), org.iff.infra.util.Logger.getTraceId());
 		}
 		{
 			session = subject.getSession(false);
@@ -70,9 +70,9 @@ public class ShiroTraceIdFilter extends AdviceFilter {
 			String[] split = StringUtils.split(traceId, '/');
 			traceId = StringHelper.concat(split.length > 0 ? split[0] : StringHelper.uuid(), "/", ip, "/", sessionId,
 					"/", loginId);
-			Logger.updateTraceId(traceId);
+			org.iff.infra.util.Logger.updateTraceId(traceId);
 			response.addHeader("TRACE_ID", traceId);
-			Logger.debug(FCS.get("ShiroTraceIdFilter.preHandle, uri: {0}", url));
+			Logger.debug(FCS.get("Shiro ShiroTraceIdFilter.preHandle, uri: {0}", url));
 		}
 		return true;
 	}

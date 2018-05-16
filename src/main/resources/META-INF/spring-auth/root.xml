@@ -8,5 +8,10 @@
 			http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
             http://www.springframework.org/schema/tx
 			http://www.springframework.org/schema/tx/spring-tx-3.2.xsd" >
+	<description>
+	<![CDATA[
+		Shiro主要配置在这里，主要看Shiro的filters配置
+	]]>
+	</description>
 	<import resource="spring-shiro.xml" />
 </beans>

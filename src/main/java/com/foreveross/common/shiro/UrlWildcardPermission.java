@@ -7,9 +7,9 @@
  ******************************************************************************/
 package com.foreveross.common.shiro;
 
-import java.io.Serializable;
-
 import org.apache.shiro.authz.Permission;
+
+import java.io.Serializable;
 
 /**
  * 使用星号【*】匹配。

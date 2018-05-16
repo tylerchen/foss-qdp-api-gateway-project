@@ -8,12 +8,11 @@
  ******************************************************************************/
 package com.foreveross.common.web;
 
-import java.util.List;
-
+import com.foreveross.common.application.Authorization;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.foreveross.common.application.Authorization;
+import java.util.List;
 
 /**
  * CommonWsController

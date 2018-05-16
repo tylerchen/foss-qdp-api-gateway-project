@@ -7,14 +7,9 @@
  ******************************************************************************/
 package com.foreveross.common.web;
 
-import java.io.IOException;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import freemarker.template.SimpleHash;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
@@ -24,9 +19,12 @@ import org.iff.infra.util.Logger;
 import org.iff.infra.util.ThreadLocalHelper;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerView;
 
-import freemarker.template.SimpleHash;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * try catch the freemarker template exception and redirect to error page.
@@ -35,6 +33,7 @@ import freemarker.template.TemplateException;
  */
 public class SpringFreeMarkerView extends FreeMarkerView {
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
 			throws Exception {

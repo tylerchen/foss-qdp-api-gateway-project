@@ -8,11 +8,13 @@
 
 	<description><![CDATA[Shiro 配置: http://www.sojson.com/blog/199.html]]></description>
 
+	<bean id="shiroChainDefinitionManager" class="com.foreveross.common.shiro.ShiroChainDefinitionManager" />
+
 	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
 		<property name="securityManager" ref="securityManager" />
 		<property name="loginUrl" value="/login.html" />
 		<property name="successUrl" value="/index.html" />
-		<property name="unauthorizedUrl" value="/error/noperms.html" />
+		<property name="unauthorizedUrl" value="/error/401.html" />
 		<!-- shiro连接约束配置 -->
 		<!-- 其实这个问题的真正原因是定义了多个filter与shirofilter 一同被spring-boot 识别,加入了filterChain. 
 			相当于myFilter与shiroFilter不再是上下级的关系,而是平级的关系,由spring ApplicationFilterConfig 
@@ -31,22 +33,34 @@
 				<entry key="accauth">
 					<bean class="com.foreveross.common.shiro.ShiroAuthAccessControlFilter" />
 				</entry>
+				<entry key="accjwt">
+					<bean class="com.foreveross.common.shiro.ShiroJwtAccessControlFilter" />
+				</entry>
+				<entry key="acconce">
+					<bean
+						class="com.foreveross.common.shiro.ShiroOnceValidAccessControlFilter">
+						<property name="onceFilterChains">
+							<list>
+								<bean class="com.foreveross.common.shiro.ShiroZuulAccessControlFilter" />
+								<bean class="com.foreveross.common.shiro.ShiroJwtAccessControlFilter" />
+								<bean class="com.foreveross.common.shiro.ShiroAuthAccessControlFilter" />
+								<bean class="com.foreveross.common.shiro.ShiroAccessControlFilter" />
+								<bean class="com.foreveross.common.shiro.ShiroIpAccessControlFilter" />
+							</list>
+						</property>
+					</bean>
+				</entry>
 				<entry key="traceid">
 					<bean class="com.foreveross.common.shiro.ShiroTraceIdFilter" />
 				</entry>
+				<entry key="crossdomain">
+					<bean class="com.foreveross.common.shiro.ShiroCrossDomainFilter" />
+				</entry>
 			</map>
 		</property>
-		<property name="filterChainDefinitions">
-			<value>
-				/resource/** = anon
-				/api/** = traceid,anon
-				/system/** = traceid,anon
-				/anonws/** = traceid,anon
-				/rpc/http/** = traceid,accip
-				/ws/** = traceid,accctl
-				/** = traceid,accctl
-			</value>
-		</property>
+		<!-- 默认从/src/main/resources/META-INF/config/shiro.properties加载配置，如要如果要动态更新filterChainDefinitions，先要shiroChainDefinitionManager.setFilterChainDefinitions，然后再调用shiroChainDefinitionManager.reCreateFilterChains。 -->
+		<property name="filterChainDefinitions"
+			value="#{shiroChainDefinitionManager.loadFilterChainDefinitions()}" />
 	</bean>
 
 	<bean id="shiroCacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
@@ -58,7 +72,15 @@
 	<!-- 安全管理器 -->
 	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
 		<!--设置自定义realm -->
-		<property name="realm" ref="monitorRealm" />
+		<!-- <property name="realm" ref="userNamePasswordRealm" /> -->
+		<property name="realms">
+			<list>
+				<ref bean="userNamePasswordRealm" />
+				<ref bean="jwtRealm" />
+			</list>
+		</property>
+		<!-- 配置多个Realm -->
+		<property name="authenticator" ref="authenticator" />
 		<!-- 基于ehCache来缓存用户认证信息和授权信息的实现 -->
 		<property name="cacheManager" ref="shiroCacheManager" />
 		<!-- 配置sessionListener -->
@@ -74,7 +96,18 @@
 	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
 
 	<!--自定义Realm 继承自AuthorizingRealm -->
-	<bean id="monitorRealm" class="com.foreveross.common.shiro.MonitorRealm"></bean>
+	<bean id="userNamePasswordRealm" class="com.foreveross.common.shiro.UserNamePasswordRealm" />
+	<bean id="jwtRealm" class="com.foreveross.common.shiro.JWTRealm" />
+
+	<!-- 配置多个Realm -->
+	<bean id="authenticator" class="org.apache.shiro.authc.pam.ModularRealmAuthenticator">
+		<property name="realms">
+			<list>
+				<ref bean="userNamePasswordRealm" />
+				<ref bean="jwtRealm" />
+			</list>
+		</property>
+	</bean>
 
 	<bean
 		class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

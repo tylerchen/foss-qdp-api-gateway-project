@@ -8,13 +8,8 @@
  ******************************************************************************/
 package com.foreveross.common.web;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.foreveross.common.ConstantBean;
+import com.foreveross.common.ResultBean;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iff.infra.util.Logger;
@@ -29,8 +24,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.foreveross.common.ConstantBean;
-import com.foreveross.common.ResultBean;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 
 /**
  * file upload download.
@@ -45,7 +43,7 @@ public class FileController extends BaseController {
 	@ResponseBody
 	@RequestMapping(value = "/upload.do", method = RequestMethod.POST)
 	public ResultBean upload(@RequestParam("file") MultipartFile upload, HttpServletRequest request,
-			HttpServletResponse response) {
+                             HttpServletResponse response) {
 		String fileName = null;
 		if (upload == null) {
 			return ResultBean.error().setBody("Unable to upload. File is empty.");
