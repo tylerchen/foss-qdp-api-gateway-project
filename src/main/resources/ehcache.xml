@@ -1,10 +1,10 @@
 <ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="false">
 
-	<!-- 硬盘路径 -->
+    <!-- 硬盘路径 -->
     <diskStore path="java.io.tmpdir/ehcache"/>
-	
-	<defaultCache
+
+    <defaultCache
             maxElementsInMemory="10000"
             eternal="false"
             timeToIdleSeconds="120"
@@ -15,6 +15,6 @@
             diskPersistent="false"
             diskExpiryThreadIntervalSeconds="120"
             memoryStoreEvictionPolicy="LRU"
-            />
-	
+    />
+
 </ehcache>
