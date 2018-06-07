@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerA
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.web.filter.OrderedCharacterEncodingFilter;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
@@ -48,7 +49,8 @@ import javax.servlet.http.HttpServletRequest;
         "com.foreveross.extension"}, excludeFilters = {
         @Filter(type = FilterType.REGEX, pattern = {"com.foreveross.extension.activiti.*"})})
 @EnableZuulProxy
-@EnableEurekaClient
+//@EnableEurekaClient
+@EnableDiscoveryClient
 public class BootApplication extends WebMvcConfigurerAdapter {
 
     public static void main(String[] args) throws Exception {
