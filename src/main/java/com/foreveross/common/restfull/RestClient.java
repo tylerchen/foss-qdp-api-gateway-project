@@ -34,7 +34,7 @@ import static java.lang.String.format;
 @SuppressWarnings("unchecked")
 public interface RestClient {
 
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
+    Charset UTF_8 = Charset.forName("UTF-8");
 
     /**
      * Executes a request against its {@link Request#url() url} and returns a response.
@@ -46,7 +46,7 @@ public interface RestClient {
      */
     Response execute(Request request, Options options) throws IOException;
 
-    public static class Request {
+    class Request {
         /**
          * No parameters can be null except {@code body} and {@code charset}. All parameters must be
          * effectively immutable, via safe copies, not mutating or otherwise.
@@ -324,7 +324,7 @@ public interface RestClient {
         }
     }
 
-    public static class Options {
+    class Options {
 
         /**
          * Defaults to 10 seconds. {@code 0} implies no timeout.
@@ -357,7 +357,7 @@ public interface RestClient {
         }
     }
 
-    public static class Response implements Closeable {
+    class Response implements Closeable {
 
         private final int status;
         private final String reason;
@@ -579,11 +579,11 @@ public interface RestClient {
                 return false;
             }
 
-            public InputStream asInputStream() throws IOException {
+            public InputStream asInputStream() {
                 return inputStream;
             }
 
-            public Reader asReader() throws IOException {
+            public Reader asReader() {
                 return new InputStreamReader(inputStream, UTF_8);
             }
 
@@ -623,7 +623,7 @@ public interface RestClient {
                 return true;
             }
 
-            public InputStream asInputStream() throws IOException {
+            public InputStream asInputStream() {
                 return new ByteArrayInputStream(data);
             }
 
@@ -631,7 +631,7 @@ public interface RestClient {
                 return new InputStreamReader(asInputStream(), UTF_8);
             }
 
-            public void close() throws IOException {
+            public void close() {
             }
 
             public String toString() {
@@ -654,7 +654,7 @@ public interface RestClient {
         }
     }
 
-    public static class Server {
+    class Server {
         private String id;
         private String host;
         private int port;
@@ -703,7 +703,7 @@ public interface RestClient {
      *
      * @author zhaochen
      */
-    public static class LoadBalancerRoundRobin implements Iterator<Server> {
+    class LoadBalancerRoundRobin implements Iterator<Server> {
         private Object[][] servers;
         private int currentIndex = 0;
         private long lastPrintLogTime = System.currentTimeMillis();
@@ -794,7 +794,7 @@ public interface RestClient {
         }
     }
 
-    public static class Util {
+    class Util {
         /**
          * The HTTP Content-Length header field name.
          */
@@ -836,7 +836,7 @@ public interface RestClient {
                 // If either of these parameters is null, the right thing happens anyway
                 throw new NullPointerException(String.format(errorMessageTemplate, errorMessageArgs));
             }
-            return (T) reference;
+            return reference;
         }
 
         /**
@@ -869,7 +869,7 @@ public interface RestClient {
 
     }
 
-    public static class DefaultRestClient implements RestClient {
+    class DefaultRestClient implements RestClient {
 
         private final SSLSocketFactory sslContextFactory;
         private final HostnameVerifier hostnameVerifier;

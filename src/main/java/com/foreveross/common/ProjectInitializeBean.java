@@ -15,6 +15,7 @@ import com.foreveross.extension.monitor.application.MonitorApplication;
 import net.sf.ehcache.CacheManager;
 import org.apache.commons.lang3.StringUtils;
 import org.iff.infra.util.*;
+import org.iff.infra.util.log.LogKafkaHelper;
 import org.iff.infra.util.spring.SpringContextHelper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -47,7 +48,7 @@ public class ProjectInitializeBean
      * (non-Javadoc)
      *
      * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
-     * @see org.springframework.beans.factory.config.BeanFactoryPostProcessor#postProcessBeanFactory(org.springframework.beans.factory.config.ConfigurableListableBeanFactory)
+     * @see BeanFactoryPostProcessor#postProcessBeanFactory(ConfigurableListableBeanFactory)
      * @since Mar 20, 2018
      */
     public synchronized void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -86,10 +87,10 @@ public class ProjectInitializeBean
      * (non-Javadoc)
      *
      * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
-     * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+     * @see InitializingBean#afterPropertiesSet()
      * @since Mar 20, 2018
      */
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
 
     }
 
@@ -98,12 +99,20 @@ public class ProjectInitializeBean
      * (non-Javadoc)
      *
      * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
-     * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
+     * @see ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
      * @since Mar 20, 2018
      */
     @SuppressWarnings("resource")
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (!hasRefresh && (hasRefresh = true)) {
+            {//启动 Kafka 日志
+                String brokers = ConstantBean.getProperty("log.kafka.brokers");
+                String topic = ConstantBean.getProperty("log.kafka.topic");
+                if (StringUtils.isNotBlank(brokers) && StringUtils.isNotBlank(topic)) {
+                    LogKafkaHelper.init(brokers, topic);
+                    LogKafkaHelper.start();
+                }
+            }
             {//加载数据库I18N
                 ((SystemApplication) SpringContextHelper.getBean("systemApplication")).initI18n();
             }

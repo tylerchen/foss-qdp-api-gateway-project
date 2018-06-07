@@ -32,8 +32,11 @@ public class MonitorApplicationImpl implements MonitorApplication {
             return;
         }
         for (Class<?> intf : interfaces) {//TODO extends interface
-            Method[] methods = intf.getDeclaredMethods();
             String className = intf.getName();
+            if (!className.endsWith("Application") || className.endsWith("RsApplication")) {
+                continue;
+            }
+            Method[] methods = intf.getDeclaredMethods();
             List<String> list = springServiceMap.get(className);
             if (list == null) {
                 list = new ArrayList<String>();
@@ -49,6 +52,8 @@ public class MonitorApplicationImpl implements MonitorApplication {
                     }
                     if (name.charAt(name.length() - 1) == ',') {
                         name.setCharAt(name.length() - 1, ')');
+                    } else {
+                        name.append(')');
                     }
                 }
                 String cleanName = name.toString();
