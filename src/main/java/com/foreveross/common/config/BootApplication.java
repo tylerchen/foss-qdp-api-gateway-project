@@ -7,6 +7,7 @@
  ******************************************************************************/
 package com.foreveross.common.config;
 
+import com.foreveross.common.shiro.JWTTokenHelper;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import org.iff.infra.util.HttpHelper;
@@ -131,18 +132,14 @@ public class BootApplication extends WebMvcConfigurerAdapter {
             if (token == null) {
                 token = request.getParameter("token");
             }
-            ctx.addZuulRequestHeader("zuul", getZuulHeader());
+            ctx.addZuulRequestHeader("zuul", getZuulHeader("zuul@admin.com"));
             ctx.addZuulRequestHeader("x-forwarded-for", HttpHelper.getRemoteIpAddr(request));
             ctx.addZuulRequestHeader("proxy-enable", "1");
-            System.out.println(RequestContext.getCurrentContext().getRouteHost());
             return null;
         }
 
-        private String getZuulHeader() {
-            if (ipsMd5 == null || ipsMd5.length() < 1) {
-                ipsMd5 = HttpHelper.ipsMd5();
-            }
-            return ipsMd5;
+        private String getZuulHeader(String user) {
+            return JWTTokenHelper.encodeToken(user);
         }
     }
 }
