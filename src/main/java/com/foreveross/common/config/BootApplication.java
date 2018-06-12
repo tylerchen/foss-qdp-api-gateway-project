@@ -132,7 +132,7 @@ public class BootApplication extends WebMvcConfigurerAdapter {
             if (token == null) {
                 token = request.getParameter("token");
             }
-            ctx.addZuulRequestHeader("zuul", getZuulHeader("zuul@admin.com"));
+            ctx.addZuulRequestHeader("zuul", getZuulHeader("admin@admin.com"));
             ctx.addZuulRequestHeader("x-forwarded-for", HttpHelper.getRemoteIpAddr(request));
             ctx.addZuulRequestHeader("proxy-enable", "1");
             return null;
