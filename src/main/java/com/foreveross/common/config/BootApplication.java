@@ -7,7 +7,7 @@
  ******************************************************************************/
 package com.foreveross.common.config;
 
-import com.foreveross.common.shiro.JWTTokenHelper;
+import com.foreveross.common.util.EncryptDecryptUtil;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import org.iff.infra.util.HttpHelper;
@@ -21,9 +21,8 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.web.filter.OrderedCharacterEncodingFilter;
-import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
 import org.springframework.context.annotation.Bean;
@@ -32,10 +31,10 @@ import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.filter.DelegatingFilterProxy;
-import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -81,27 +80,43 @@ public class BootApplication extends WebMvcConfigurerAdapter {
         return filter;
     }
 
+    /**
+     * @return
+     * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
+     * @date 2018-06-26
+     * @since 2018-06-26
+     */
     @Bean
-    public DelegatingFilterProxy shiroFilter() {
-        DelegatingFilterProxy filter = new DelegatingFilterProxy();
-        filter.setTargetFilterLifecycle(true);
-        filter.setTargetBeanName("shiroFilter");
-        return filter;
+    public FilterRegistrationBean shiroFilterRegistration() {
+        FilterRegistrationBean filterRegistration = new FilterRegistrationBean();
+        filterRegistration.setFilter(new DelegatingFilterProxy("shiroFilter"));
+        filterRegistration.setEnabled(true);
+        filterRegistration.setOrder(0);
+        filterRegistration.addUrlPatterns("/*");
+        filterRegistration.setDispatcherTypes(DispatcherType.REQUEST);
+        return filterRegistration;
     }
-
-    @Bean
-    public DispatcherServlet dispatcherServlet() {
-        DispatcherServlet servlet = new DispatcherServlet();
-        servlet.setDispatchOptionsRequest(true);
-        return servlet;
-    }
-
-    @Bean
-    public ServletRegistrationBean dispatcherRegistration(DispatcherServlet dispatcherServlet) {
-        ServletRegistrationBean registration = new ServletRegistrationBean(dispatcherServlet, "/*");
-        registration.setLoadOnStartup(1);
-        return registration;
-    }
+//    @Bean
+//    public DelegatingFilterProxy shiroFilter() {
+//        DelegatingFilterProxy filter = new DelegatingFilterProxy();
+//        filter.setTargetFilterLifecycle(true);
+//        filter.setTargetBeanName("shiroFilter");
+//        return filter;
+//    }
+//
+//    @Bean
+//    public DispatcherServlet dispatcherServlet() {
+//        DispatcherServlet servlet = new DispatcherServlet();
+//        servlet.setDispatchOptionsRequest(true);
+//        return servlet;
+//    }
+//
+//    @Bean
+//    public ServletRegistrationBean dispatcherRegistration(DispatcherServlet dispatcherServlet) {
+//        ServletRegistrationBean registration = new ServletRegistrationBean(dispatcherServlet, "/*");
+//        registration.setLoadOnStartup(1);
+//        return registration;
+//    }
 
     @Bean
     public PreRequestFilter simpleFilter() {
@@ -128,18 +143,10 @@ public class BootApplication extends WebMvcConfigurerAdapter {
             RequestContext ctx = RequestContext.getCurrentContext();
             HttpServletRequest request = ctx.getRequest();
             Logger.info(String.format("%s request to %s", request.getMethod(), request.getRequestURL().toString()));
-            String token = request.getHeader("token");
-            if (token == null) {
-                token = request.getParameter("token");
-            }
-            ctx.addZuulRequestHeader("zuul", getZuulHeader("admin@admin.com"));
+            ctx.addZuulRequestHeader("zuultoken", EncryptDecryptUtil.deflate2Base62Encrypt("zuul@admin.com"));
             ctx.addZuulRequestHeader("x-forwarded-for", HttpHelper.getRemoteIpAddr(request));
             ctx.addZuulRequestHeader("proxy-enable", "1");
             return null;
-        }
-
-        private String getZuulHeader(String user) {
-            return JWTTokenHelper.encodeToken(user);
         }
     }
 }
