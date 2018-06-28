@@ -125,8 +125,6 @@ public class BootApplication extends WebMvcConfigurerAdapter {
 
     public class PreRequestFilter extends ZuulFilter {
 
-        private String ipsMd5 = "";
-
         public String filterType() {//"pre" for pre-routing filtering, "route" for routing to an origin, "post" for post-routing filters, "error" for error handling.
             return FilterConstants.PRE_TYPE;
         }
