@@ -8,15 +8,17 @@
 package com.foreveross.common.config;
 
 import com.foreveross.common.util.EncryptDecryptUtil;
+import com.google.gson.reflect.TypeToken;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
-import org.iff.infra.util.HttpHelper;
-import org.iff.infra.util.Logger;
+import com.thoughtworks.xstream.XStream;
+import org.iff.infra.util.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
@@ -29,6 +31,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.AbstractGenericHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -36,18 +46,31 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 import javax.servlet.DispatcherType;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 
 /**
  * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
  * @since Oct 23, 2017
  */
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class,
-        DataSourceTransactionManagerAutoConfiguration.class, FreeMarkerAutoConfiguration.class,
-        TransactionAutoConfiguration.class, CacheAutoConfiguration.class})
+@SpringBootApplication(
+        exclude = {DataSourceAutoConfiguration.class,
+                DataSourceTransactionManagerAutoConfiguration.class,
+                FreeMarkerAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                CacheAutoConfiguration.class,
+                JacksonAutoConfiguration.class})
 //@ImportResource({ "classpath:META-INF/spring/root.xml" }) =>这个放到application.properties中配置了
-@ComponentScan(basePackages = {"com.foreveross.qdp", "com.foreveross.common",
-        "com.foreveross.extension"}, excludeFilters = {
-        @Filter(type = FilterType.REGEX, pattern = {"com.foreveross.extension.activiti.*"})})
+@ComponentScan(
+        basePackages = {"com.foreveross.qdp",
+                "com.foreveross.common",
+                "com.foreveross.extension"},
+        excludeFilters = {
+                @Filter(type = FilterType.REGEX, pattern = {"com.foreveross.extension.activiti.*"})})
 @EnableZuulProxy
 //@EnableEurekaClient
 @EnableDiscoveryClient
@@ -96,27 +119,6 @@ public class BootApplication extends WebMvcConfigurerAdapter {
         filterRegistration.setDispatcherTypes(DispatcherType.REQUEST);
         return filterRegistration;
     }
-//    @Bean
-//    public DelegatingFilterProxy shiroFilter() {
-//        DelegatingFilterProxy filter = new DelegatingFilterProxy();
-//        filter.setTargetFilterLifecycle(true);
-//        filter.setTargetBeanName("shiroFilter");
-//        return filter;
-//    }
-//
-//    @Bean
-//    public DispatcherServlet dispatcherServlet() {
-//        DispatcherServlet servlet = new DispatcherServlet();
-//        servlet.setDispatchOptionsRequest(true);
-//        return servlet;
-//    }
-//
-//    @Bean
-//    public ServletRegistrationBean dispatcherRegistration(DispatcherServlet dispatcherServlet) {
-//        ServletRegistrationBean registration = new ServletRegistrationBean(dispatcherServlet, "/*");
-//        registration.setLoadOnStartup(1);
-//        return registration;
-//    }
 
     @Bean
     public PreRequestFilter simpleFilter() {
